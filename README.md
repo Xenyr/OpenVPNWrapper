@@ -1,10 +1,10 @@
 # OpenVPNWrapper
 Wrapper for OpenVPN to update configuration scripts for access
-to NAS systems with IPv6 addresses behind DS-Lite routers
+to NAS systems with IPv6 addresses behind DS-Lite routers.
 
 ## Executive Summary
 
-### What does OpenVPNWrapper?
+### What does OpenVPNWrapper do?
 
 OpenVPNWrapper is a tiny tool for Windows 10, allowing you to connect to a NAS behind an
 DS-Lite tunnel for VPN accessibility. It therefore resolves the IPv6 address of the NAS
@@ -104,6 +104,7 @@ to the OpenVPNWrapper, as the wrapper will call OpenVPN once the IPv6 address re
 is finished. Therefore, right click on *OpenVPN GUI* and change the destination to
 ```C:\ProgramData\Microsoft\Windows\Start Menu\Programs\OpenVPN\OpenVPNWrapper\OpenVPNWrapper.exe```
 as shown in the image below.
+
 ![LinkScreenshot](Images/LinkScreenshot.jpg)
 
 Enable OpenVPN on your NAS. Make sure that IPv6 for OpenVPN on your NAS is supported by
@@ -111,6 +112,7 @@ your NAS (for QNAP, [which does not support IPv6 VPN officially], you can use a 
 which will be explained further on [later](#enabling-ipv6-openvpn-on-qnap)). Download the
 OpenVPN configuration file from the NAS and store it in the *config* folder of OpenVPN
 (```C:\Program Files\OpenVPN\config```):
+
 ![QNAPOpenVPNScreenshot](Images/QNAPOpenVPNScreenshot.jpg)
 For the first run, you need to update the configuration script manually. Therefore, open
 the configuration file and update the IP address in the ```remote``` line accordingly,
@@ -188,12 +190,13 @@ version, see https://wiki.qnap.com/wiki/Running_Your_Own_Application_at_Startup)
 Note that you still need to enable the execution of ```autorun.sh``` at startup. You can
 activate this option by checking *Run user defined processes during startup* in 
 *Control Panel > System > Hardware*:
+
 ![QNAPControlPanelScreenshot](Images/QNAPControlPanelScreenshot.jpg)
 
 This entry simply exchanges the ```proto ${VPN_PROTO}``` with ```proto ${VPN_PROTO}6``` in
-the ```/etc/init.d/vpn_openvpn.sh``` script and restarts the service afterwards. Similar
-to the change of ```proto udp``` to ```proto udp6``` this adjustment enables connection to
-the OpenVPN server (your NAS) as well via IPv4 as via IPv6.
+the ```/etc/init.d/vpn_openvpn.sh``` script and restarts the service 10 minutes after the
+device has booted. Similar to the change of ```proto udp``` to ```proto udp6```, this
+adjustment enables accessing the OpenVPN server (your NAS) as well via IPv4 as via IPv6.
 
 ### Self-scripting and source code customization
 
