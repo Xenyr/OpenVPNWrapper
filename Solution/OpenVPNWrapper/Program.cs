@@ -24,6 +24,7 @@ using System.Management.Automation;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace OpenVPNWrapper
 {
@@ -35,6 +36,7 @@ namespace OpenVPNWrapper
         static readonly string logDir = $@"{upd}\Documents\OpenVPNWrapper";
         static readonly string logFile = $@"{logDir}\OpenVPNWrapper_{DateTimeOffset.Now.ToUnixTimeSeconds()}.log";
 
+        [STAThread]
         public static void Main()
         {
             try
@@ -43,8 +45,31 @@ namespace OpenVPNWrapper
             }
             catch (Exception ex)
             {
+                if (ex.GetType() == typeof(AggregateException) && ex.InnerException?.GetType() == typeof(FileNotFoundException))
+                {
+                    Console.WriteLine("OpenVPN GUI (openvpn-gui.exe) not found automatically. Please specify the path manually.");
+                    OpenFileDialog fd = new OpenFileDialog
+                    {
+                        InitialDirectory = @"C:\",
+                        Filter = "OpenVPN GUI (*.exe)|*.exe"
+                    };
+
+                    if (fd.ShowDialog() == DialogResult.OK)
+                    {   
+                        try
+                        {
+                            Process.Start(fd.FileName);
+                            return;
+                        }
+                        catch (Exception e)
+                        {
+                            ex = e;
+                        }                        
+                    }
+                }
+
                 if (!Directory.Exists(logDir)) Directory.CreateDirectory(logDir);
-                File.WriteAllText(logFile, $"Exception occurred during call of OpenVPNWrapper: {ex.StackTrace}");
+                File.WriteAllText(logFile, $"Exception occurred during call of OpenVPNWrapper: {ex}");
                 Console.WriteLine("Exception occurred during execution of OpenVPNWrapper.");
                 Console.WriteLine($"See {logFile} for details.");
                 AvoidAutomaticApplicationClosure().Wait();
@@ -68,7 +93,7 @@ namespace OpenVPNWrapper
             catch (Exception ex)
             {
                 if (!Directory.Exists(logDir)) Directory.CreateDirectory(logDir);
-                File.WriteAllText(logFile, $"Exception occurred during call of OpenVPNWrapper: {ex.StackTrace}");
+                File.WriteAllText(logFile, $"Exception occurred during call of OpenVPNWrapper: {ex}");
                 Console.WriteLine("Exception occurred during execution of PowerShell script.");
                 Console.WriteLine($"See {logFile} for details.");
                 await AvoidAutomaticApplicationClosure();
@@ -136,12 +161,17 @@ namespace OpenVPNWrapper
 
             try
             {
-                Process.Start(@"C:\Program Files\OpenVPN\bin\openvpn-gui.exe");
+                if (File.Exists(@"C:\Program Files\OpenVPN\bin\openvpn-gui.exe"))
+                    Process.Start(@"C:\Program Files\OpenVPN\bin\openvpn-gui.exe");
+                else if (File.Exists(@"C:\Program Files (x86)\OpenVPN\bin\openvpn-gui.exe"))
+                    Process.Start(@"C:\Program Files (x86)\OpenVPN\bin\openvpn-gui.exe");
+                else throw new FileNotFoundException("openvpn-gui.exe");
             }
+            catch (FileNotFoundException) { throw; }
             catch (Exception ex)
             {
                 if (!Directory.Exists(logDir)) Directory.CreateDirectory(logDir);
-                File.WriteAllText(logFile, $"Exception occurred during call of OpenVPNWrapper: {ex.StackTrace}");
+                File.WriteAllText(logFile, $"Exception occurred during call of OpenVPNWrapper: {ex}");
                 Console.WriteLine("Exception occurred during call of OpenVPN GUI application.");
                 Console.WriteLine($"See {logFile} for details.");
                 await AvoidAutomaticApplicationClosure();

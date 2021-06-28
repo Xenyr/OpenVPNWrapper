@@ -92,9 +92,8 @@ Windows 10 version. If the application does not start due to the missing framewo
 may [install](https://dotnet.microsoft.com/download/dotnet-framework/net48) it directly
 from Microsoft.
 
-Install the 64-bit-Version of OpenVPN if not done yet in order to connect to the NAS once
-the setup is done (https://openvpn.net/community-downloads/). Choose therefore the 
-*Windows 64-bit MSI Installer*.
+Install OpenVPN if not done yet in order to connect to the NAS once the setup is done
+(https://openvpn.net/community-downloads/). Choose therefore the *Windows ... MSI Installer*.
 
 Place the entire OpenVPNWrapper folder at the location of your desire, preferably inside
 the start menu folder of the OpenVPN in Windows (e.g. as ```OpenVPNWrapper``` folder in
@@ -107,9 +106,9 @@ as shown in the image below.
 
 ![LinkScreenshot](Images/LinkScreenshot.jpg)
 
-Enable OpenVPN on your NAS. Make sure that IPv6 for OpenVPN on your NAS is supported by
-your NAS (for QNAP, [which does not support IPv6 VPN officially], you can use a workaround
-which will be explained further on [later](#enabling-ipv6-openvpn-on-qnap)). Download the
+Enable OpenVPN on your NAS. Make sure that IPv6 for OpenVPN is supported by your NAS
+(for QNAP, [which does not support IPv6 VPN officially], you can use a workaround which
+will be explained further on [later](#enabling-ipv6-openvpn-on-qnap)). Download the
 OpenVPN configuration file from the NAS and store it in the *config* folder of OpenVPN
 (```C:\Program Files\OpenVPN\config```):
 
