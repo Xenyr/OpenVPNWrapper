@@ -17,6 +17,7 @@
  */
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -53,18 +54,27 @@ namespace OpenVPNWrapper
                         InitialDirectory = @"C:\",
                         Filter = "OpenVPN GUI (*.exe)|*.exe"
                     };
+                    List<string> psLines = null;
 
-                    if (fd.ShowDialog() == DialogResult.OK)
-                    {   
-                        try
+                    try
+                    {
+                        psLines = File.ReadAllLines(scriptFile).ToList();
+                        psLines.RemoveAll(entry => entry.StartsWith("$ovpnProgram"));
+
+                        if (fd.ShowDialog() == DialogResult.OK)
                         {
                             Process.Start(fd.FileName);
+                            psLines.Insert(psLines.IndexOf(string.Empty), $"$ovpnProgram = \"{fd.FileName}\"");
                             return;
                         }
-                        catch (Exception e)
-                        {
-                            ex = e;
-                        }                        
+                    }
+                    catch (Exception e)
+                    {
+                        ex = e;
+                    }
+                    finally
+                    {
+                        if (psLines != null) File.WriteAllLines(scriptFile, psLines);
                     }
                 }
 
@@ -101,8 +111,8 @@ namespace OpenVPNWrapper
             }
 
             string ovpnFile = script.Split('\n').Where(line => line.StartsWith("$ovpnFile")).FirstOrDefault();
-            int firstIndex = ovpnFile.IndexOf("\"") + 1;
-            int lastIndex = ovpnFile.LastIndexOf("\"");
+            int firstIndex = ovpnFile?.IndexOf("\"") + 1 ?? default;
+            int lastIndex = ovpnFile?.LastIndexOf("\"") ?? default;
             ovpnFile = ovpnFile?.Substring(firstIndex, lastIndex - firstIndex);
 
             if (string.IsNullOrEmpty(result))
@@ -159,9 +169,21 @@ namespace OpenVPNWrapper
                 cts.Cancel();
             }
 
+            string ovpnProgram = script.Split('\n').Where(line => line.StartsWith("$ovpnProgram")).FirstOrDefault();
+            firstIndex = ovpnProgram?.IndexOf("\"") + 1 ?? default;
+            lastIndex = ovpnProgram?.LastIndexOf("\"") ?? default;
+            ovpnProgram = ovpnProgram?.Substring(firstIndex, lastIndex - firstIndex);
+
             try
             {
-                if (File.Exists(@"C:\Program Files\OpenVPN\bin\openvpn-gui.exe"))
+                if (!string.IsNullOrEmpty(ovpnProgram))
+                {
+                    Console.WriteLine("Using cached OpenVPN GUI program path automatically in 5 seconds, " +
+                        "press Enter to declare path manually again...");
+                    if (await UserInterrupted()) throw new FileNotFoundException("openvpn-gui.exe");
+                    Process.Start(ovpnProgram);
+                }
+                else if (File.Exists(@"C:\Program Files\OpenVPN\bin\openvpn-gui.exe"))
                     Process.Start(@"C:\Program Files\OpenVPN\bin\openvpn-gui.exe");
                 else if (File.Exists(@"C:\Program Files (x86)\OpenVPN\bin\openvpn-gui.exe"))
                     Process.Start(@"C:\Program Files (x86)\OpenVPN\bin\openvpn-gui.exe");
@@ -181,16 +203,21 @@ namespace OpenVPNWrapper
         public static async Task AvoidAutomaticApplicationClosure()
         {
             Console.WriteLine("Press Enter to avoid automatic application closure in 5 seconds...");
+            if (await UserInterrupted())
+            {
+                Console.WriteLine("Press Enter to manually close application.");
+                await Console.In.ReadLineAsync();
+            }
+        }
+
+        public static async Task<bool> UserInterrupted()
+        {
             DateTime start = DateTime.Now;
             CancellationTokenSource cts = new CancellationTokenSource();
             await Task.WhenAny(Task.Run(Console.In.ReadLineAsync, cts.Token), Task.Delay(5000, cts.Token));
             DateTime end = DateTime.Now;
             cts.Cancel();
-            if (end - start < TimeSpan.FromSeconds(5))
-            {
-                Console.WriteLine("Press Enter to manually close application.");
-                await Console.In.ReadLineAsync();
-            }
+            return end - start < TimeSpan.FromSeconds(5);
         }
     }
 }
